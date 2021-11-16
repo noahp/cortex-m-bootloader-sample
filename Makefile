@@ -85,11 +85,14 @@ $(BUILDDIR)/app.ld: src/common/stm32f407.ld
 	$(info Generating linker script $@)
 	$(CC) -DFLASH__=APP_FLASH -E -P -C -x c-header $^ > $@
 
+# Generate a binary copy of the bootloader (raw image)
 $(BUILDDIR)/bootloader.bin: $(BUILDDIR)/bootloader.elf
 	mkdir -p $(dir $@)
 	$(info Generating binary $@)
 	arm-none-eabi-objcopy -O binary $< $@
 
+# Generate an object file containing the raw binary bootloader image.
+# This will be linked into the application at the `.bootloader` output section.
 $(BUILDDIR)/bootloader.o: $(BUILDDIR)/bootloader.bin
 	mkdir -p $(dir $@)
 	arm-none-eabi-objcopy -I binary -O elf32-littlearm -B arm \
