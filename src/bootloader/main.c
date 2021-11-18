@@ -77,11 +77,14 @@ int main(void) {
   // set the vector table base address for application
   uint32_t *vector_table = (uint32_t *)__application_start;
   uint32_t *vtor = (uint32_t *)0xE000ED08;
+
+  // NOLINTNEXTLINE(clang-diagnostic-pointer-to-int-cast)
   *vtor = ((uint32_t)vector_table & 0xFFFFFFF8UL);
 
   // set application stack pointer and jump to application
   __asm__("msr msp, %0\n" : : "r"(vector_table[0]));
 
+  // NOLINTNEXTLINE
   ((void (*)(void))(((uint32_t *)vector_table)[1]))();
 
   while (1) {
