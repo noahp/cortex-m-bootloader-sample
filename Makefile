@@ -19,35 +19,81 @@ RM = rm -rf
 
 BUILDDIR = build
 
-ARCHFLAGS +=
+ARCHFLAGS += -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mlittle-endian -mthumb
 GDB_RELOAD_CMD =
 
+# clang support
+CC_VERSION_INFO := $(shell $(CC) --version)
+
+ARM_CORTEXM_SYSROOT := \
+  $(shell $(ARM_CC) $(ARCHFLAGS) -print-sysroot 2>&1)
+
+# The directory where Newlib's libc.a & libm.a reside
+# for the specific target architecture
+ARM_CORTEXM_MULTI_DIR := \
+  $(shell $(ARM_CC) $(ARCHFLAGS) -print-multi-directory 2>&1)
+
+ifneq '' '$(findstring clang,$(CC_VERSION_INFO))'
+# --- CLANG SPECIFIC ---
+
 CFLAGS += \
-  -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 \
-  -Os -ggdb3 -std=c11 \
+  --sysroot=$(ARM_CORTEXM_SYSROOT) \
+  --target=arm-none-eabi
+
+LDFLAGS += \
+  -L$(ARM_CORTEXM_SYSROOT)/lib/$(ARM_CORTEXM_MULTI_DIR)
+else
+# --- GCC SPECIFIC ---
+# print memory usage if linking with gnu ld
+LDFLAGS += -Wl,--print-memory-usage
+# additional gcc-specific flags, used for computing stack usage
+CFLAGS += -fstack-usage -fdump-rtl-dfinish -fdump-ipa-cgraph
+endif
+
+CFLAGS += \
+  $(ARCHFLAGS) \
+  -Os -ggdb3 -std=gnu11 \
   -fdebug-prefix-map=$(abspath .)=. \
-  -I. \
   -ffunction-sections -fdata-sections \
+
+CFLAGS += \
   -Werror \
   -Wall \
   -Wextra \
   -Wundef \
 
+INCLUDES = \
+  . \
+
+CFLAGS += $(addprefix -I,$(INCLUDES))
+
+# libc should be before libraries it depends on, eg libgcc and libnosys manually
+# specify libgcc_nano.
+#
+# clang's auto search logic seems to pick up sysroot-based paths before the
+# explicit reference to the arch variant libs. so let's just specify the literal
+# path to the libraries we need.
 LDFLAGS += \
-  --specs=rdimon.specs \
-  --specs=nano.specs \
-  -Wl,--gc-sections,-Map,$@.map,--build-id \
-  -Wl,--print-memory-usage
+  $(ARM_CORTEXM_SYSROOT)/lib/$(ARM_CORTEXM_MULTI_DIR)/libc_nano.a \
+  $(ARM_CORTEXM_SYSROOT)/lib/$(ARM_CORTEXM_MULTI_DIR)/libg_nano.a \
+  $(ARM_CORTEXM_SYSROOT)/lib/$(ARM_CORTEXM_MULTI_DIR)/libnosys.a \
+
+LDFLAGS += \
+  -nostdlib \
+  $(shell $(ARM_CC) $(ARCHFLAGS) -print-libgcc-file-name 2>&1)
+
+LDFLAGS += -Wl,--gc-sections,-Map,$@.map,--build-id
 
 APP_SRCS += \
   src/app/main.c \
-  src/common/noinit.c \
+  $(wildcard src/common/*.c)
 
 APP_OBJS = $(APP_SRCS:%.c=$(BUILDDIR)/%.o)
 
 BOOTLOADER_SRCS += \
   src/bootloader/main.c \
-  src/common/noinit.c \
+  $(wildcard src/common/*.c)
+
 
 BOOTLOADER_OBJS = $(BOOTLOADER_SRCS:%.c=$(BUILDDIR)/%.o)
 
@@ -95,7 +141,7 @@ $(BUILDDIR)/bootloader.o: $(BUILDDIR)/bootloader.bin
 	arm-none-eabi-objcopy -I binary -O elf32-littlearm -B arm \
 		--rename-section .data=.bootloader $^ $@
 
-$(BUILDDIR)/app.elf: $(BUILDDIR)/app.ld $(BUILDDIR)/bootloader.o $(APP_OBJS)
+$(BUILDDIR)/app.elf: $(BUILDDIR)/app.ld $(APP_OBJS) $(BUILDDIR)/bootloader.o
 	mkdir -p $(dir $@)
 	$(info Linking $@)
 	$(CC) $(CFLAGS) -T$^ $(LDFLAGS) -o $@
