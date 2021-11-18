@@ -55,7 +55,7 @@ __attribute__((weak)) void HardFault_Handler(void) {
 
 // A minimal vector table for a Cortex M.
 __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
-    (void *)(&__stack), // initial stack pointer
+    (void *)(&__stack),  // initial stack pointer
     Reset_Handler,
     0,
     HardFault_Handler,
@@ -77,7 +77,7 @@ int main(void) {
   // set the vector table base address for application
   uint32_t *vector_table = (uint32_t *)__application_start;
   uint32_t *vtor = (uint32_t *)0xE000ED08;
-  *vtor = ((uint32_t)vector_table & 0xFFFFFFF8);
+  *vtor = ((uint32_t)vector_table & 0xFFFFFFF8UL);
 
   // set application stack pointer and jump to application
   __asm__("msr msp, %0\n" : : "r"(vector_table[0]));

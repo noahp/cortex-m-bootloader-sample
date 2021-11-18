@@ -56,7 +56,7 @@ __attribute__((weak)) void HardFault_Handler(void) {
 
 // A minimal vector table for a Cortex M.
 __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
-    (void *)(&__stack), // initial stack pointer
+    (void *)(&__stack),  // initial stack pointer
     Reset_Handler,
     0,
     HardFault_Handler,
