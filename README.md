@@ -81,8 +81,6 @@ The application ELF is produced by the following steps (see
 A region of RAM is reserved for symbols placed into any `.noinit*` section. In
 this example the `NOINIT` region is the top 0x100 bytes of RAM.
 
-Since the bootloader
-
 ## How to run it
 
 To build + run it on an STM32F4 Discovery board:
