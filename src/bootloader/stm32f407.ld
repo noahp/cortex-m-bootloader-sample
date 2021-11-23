@@ -18,6 +18,8 @@ SECTIONS
     {
         KEEP(*(.isr_vector))
         *(.text*)
+        KEEP(*(.init))
+        KEEP(*(.fini))
         *(.rodata*)
     } > BOOTLOADER_FLASH
 

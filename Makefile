@@ -36,7 +36,7 @@ CFLAGS += \
 LDFLAGS += \
   --specs=rdimon.specs \
   --specs=nano.specs \
-  -Wl,--gc-sections,-Map,$@.map,--build-id \
+  -Wl,--gc-sections,-Map,$@.map \
   -Wl,--print-memory-usage
 
 APP_SRCS += \
@@ -51,7 +51,7 @@ BOOTLOADER_SRCS += \
 
 BOOTLOADER_OBJS = $(BOOTLOADER_SRCS:%.c=$(BUILDDIR)/%.o)
 
-all: $(BUILDDIR)/app.elf
+all: $(BUILDDIR)/app.elf $(BUILDDIR)/bootloader.elf
 
 # depfiles for tracking include changes
 DEPFILES = $(OBJS:%.o=%.o.d)
@@ -87,7 +87,7 @@ $(BUILDDIR)/app.elf: src/app/stm32f407.ld $(APP_OBJS)
 debug:
 	openocd -f tools/stm32f4.openocd.cfg
 
-gdb-bootloader: $(BUILDDIR)/bootloader.elf
+gdb-bootloader: $(BUILDDIR)/app.elf $(BUILDDIR)/bootloader.elf
 # load (flash) application and bootloader, and debug bootloader elf
 	$(GDB) -ex "target extended-remote :3333" -ex "monitor reset halt" \
 		-ex "load $(BUILDDIR)/app.elf" -ex "load $(BUILDDIR)/bootloader.elf" \
