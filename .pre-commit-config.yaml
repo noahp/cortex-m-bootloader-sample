@@ -1,6 +1,12 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
 
+exclude: "\
+  (src/cmsis/.*)\
+  |(src/app/stm32f407xx\\.h)\
+  |(src/app/system_stm32f4xx\\.h)\
+  "
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
