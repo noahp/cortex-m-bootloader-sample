@@ -64,41 +64,21 @@ $(BUILDDIR):
 clean:
 	$(RM) $(BUILDDIR)
 
+# compile .c files to .o files
 $(BUILDDIR)/%.o: %.c
 	mkdir -p $(dir $@)
 	$(info Compiling $<)
 	$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@
 
-$(BUILDDIR)/bootloader.ld: src/common/stm32f407.ld
-	mkdir -p $(dir $@)
-	$(info Generating linker script $@)
-	$(CC) -DFLASH__=BOOTLOADER_FLASH -E -P -C -x c-header $^ > $@
-
-$(BUILDDIR)/bootloader.elf: $(BUILDDIR)/bootloader.ld $(BOOTLOADER_OBJS)
+# link bootloader elf
+$(BUILDDIR)/bootloader.elf: src/bootloader/stm32f407.ld $(BOOTLOADER_OBJS)
 	mkdir -p $(dir $@)
 	$(info Linking $@)
 	$(CC) $(CFLAGS) -T$^ $(LDFLAGS) -o $@
 	arm-none-eabi-size $@
 
-$(BUILDDIR)/app.ld: src/common/stm32f407.ld
-	mkdir -p $(dir $@)
-	$(info Generating linker script $@)
-	$(CC) -DFLASH__=APP_FLASH -E -P -C -x c-header $^ > $@
-
-# Generate a binary copy of the bootloader (raw image)
-$(BUILDDIR)/bootloader.bin: $(BUILDDIR)/bootloader.elf
-	mkdir -p $(dir $@)
-	$(info Generating binary $@)
-	arm-none-eabi-objcopy -O binary $< $@
-
-# Generate an object file containing the raw binary bootloader image.
-# This will be linked into the application at the `.bootloader` output section.
-$(BUILDDIR)/bootloader.o: $(BUILDDIR)/bootloader.bin
-	mkdir -p $(dir $@)
-	arm-none-eabi-objcopy -I binary -O elf32-littlearm -B arm \
-		--rename-section .data=.bootloader $^ $@
-
-$(BUILDDIR)/app.elf: $(BUILDDIR)/app.ld $(BUILDDIR)/bootloader.o $(APP_OBJS)
+# link application elf
+$(BUILDDIR)/app.elf: src/app/stm32f407.ld $(APP_OBJS)
 	mkdir -p $(dir $@)
 	$(info Linking $@)
 	$(CC) $(CFLAGS) -T$^ $(LDFLAGS) -o $@
@@ -108,9 +88,15 @@ debug:
 	openocd -f tools/stm32f4.openocd.cfg
 
 gdb-bootloader: $(BUILDDIR)/bootloader.elf
-	$(GDB) $^ -ex "source .gdb-startup" -ex "openocd-reload"
+# load (flash) application and bootloader, and debug bootloader elf
+	$(GDB) -ex "target extended-remote :3333" -ex "monitor reset halt" \
+		-ex "load $(BUILDDIR)/app.elf" -ex "load $(BUILDDIR)/bootloader.elf" \
+		-ex "monitor reset init" $(BUILDDIR)/bootloader.elf
 
-gdb: $(BUILDDIR)/app.elf
-	$(GDB) $^ -ex "source .gdb-startup" -ex "openocd-reload"
+gdb-app: $(BUILDDIR)/app.elf $(BUILDDIR)/bootloader.elf
+# load (flash) application and bootloader, and debug application elf
+	$(GDB) -ex "target extended-remote :3333" -ex "monitor reset halt" \
+		-ex "load $(BUILDDIR)/app.elf" -ex "load $(BUILDDIR)/bootloader.elf" \
+		-ex "monitor reset init" $(BUILDDIR)/app.elf
 
 .PHONY: all clean debug gdb gdb-bootloader
