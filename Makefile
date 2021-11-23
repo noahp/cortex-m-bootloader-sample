@@ -27,6 +27,7 @@ CFLAGS += \
   -Os -ggdb3 -std=c11 \
   -fdebug-prefix-map=$(abspath .)=. \
   -I. \
+  -Isrc/cmsis \
   -ffunction-sections -fdata-sections \
   -Werror \
   -Wall \
@@ -51,7 +52,7 @@ BOOTLOADER_SRCS += \
 
 BOOTLOADER_OBJS = $(BOOTLOADER_SRCS:%.c=$(BUILDDIR)/%.o)
 
-all: $(BUILDDIR)/app.elf $(BUILDDIR)/bootloader.elf
+all: $(BUILDDIR)/app.elf
 
 # depfiles for tracking include changes
 DEPFILES = $(OBJS:%.o=%.o.d)
@@ -70,13 +71,6 @@ $(BUILDDIR)/%.o: %.c
 	$(info Compiling $<)
 	$(CC) $(CFLAGS) $(DEPFLAGS) -c $< -o $@
 
-# link bootloader elf
-$(BUILDDIR)/bootloader.elf: src/bootloader/stm32f407.ld $(BOOTLOADER_OBJS)
-	mkdir -p $(dir $@)
-	$(info Linking $@)
-	$(CC) $(CFLAGS) -T$^ $(LDFLAGS) -o $@
-	arm-none-eabi-size $@
-
 # link application elf
 $(BUILDDIR)/app.elf: src/app/stm32f407.ld $(APP_OBJS)
 	mkdir -p $(dir $@)
@@ -87,16 +81,10 @@ $(BUILDDIR)/app.elf: src/app/stm32f407.ld $(APP_OBJS)
 debug:
 	openocd -f tools/stm32f4.openocd.cfg
 
-gdb-bootloader: $(BUILDDIR)/app.elf $(BUILDDIR)/bootloader.elf
-# load (flash) application and bootloader, and debug bootloader elf
+gdb-app: $(BUILDDIR)/app.elf
+# load (flash) application and debug application elf
 	$(GDB) -ex "target extended-remote :3333" -ex "monitor reset halt" \
-		-ex "load $(BUILDDIR)/app.elf" -ex "load $(BUILDDIR)/bootloader.elf" \
-		-ex "monitor reset init" $(BUILDDIR)/bootloader.elf
-
-gdb-app: $(BUILDDIR)/app.elf $(BUILDDIR)/bootloader.elf
-# load (flash) application and bootloader, and debug application elf
-	$(GDB) -ex "target extended-remote :3333" -ex "monitor reset halt" \
-		-ex "load $(BUILDDIR)/app.elf" -ex "load $(BUILDDIR)/bootloader.elf" \
+		-ex "load $(BUILDDIR)/app.elf" \
 		-ex "monitor reset init" $(BUILDDIR)/app.elf
 
 .PHONY: all clean debug gdb gdb-bootloader

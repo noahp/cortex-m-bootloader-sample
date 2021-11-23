@@ -4,6 +4,16 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "stm32f407xx.h"
+
+// Two non-initialized variables, used to demonstrate keeping information
+// through chip reset.
+#define RESET_MAGIC 0xDEADBEEF
+// magic value used to check if the variables are initialized
+__attribute__((section(".noinit"), used)) uint32_t reset_count_magic;
+// reset counter, incremented on every warm reset
+__attribute__((section(".noinit"), used)) uint32_t reset_count;
+
 extern void initialise_monitor_handles(void);
 
 int main(void);
@@ -70,11 +80,21 @@ int main(void) {
 
   printf("Hello from Application!\n");
 
-  extern uint32_t mailbox[4];
-  printf("mailbox was: 0x%08" PRIx32 "\n", mailbox[0]);
+  if (reset_count_magic != RESET_MAGIC) {
+    reset_count_magic = RESET_MAGIC;
+    reset_count = 0;
 
-  while (1) {
+    printf("First reset!\n");
+  }
+
+  printf("Reset count: %" PRIu32 "\n", ++reset_count);
+
+  volatile uint32_t countdown = 48*1000*1000;
+  while (countdown--) {
+    __asm__("nop");
   };
+
+  NVIC_SystemReset();
 
   return 0;
 }
