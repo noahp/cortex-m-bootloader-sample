@@ -10,7 +10,7 @@ MEMORY
   BOOTLOADER_FLASH (rx) : ORIGIN = 0x08000000, LENGTH = 16K
   APP_FLASH (rx) : ORIGIN = 0x08004000, LENGTH = 1M - 16K
   RAM (rwx) : ORIGIN = 0x20000000, LENGTH = 128K - 0x100
-  NOINIT (rwx) : ORIGIN = 0x2001b000, LENGTH = 0x100
+  NOINIT (rwx) : ORIGIN = 0x20000000 + 128K - 0x100, LENGTH = 0x100
 }
 
 /* Linker script to place sections and symbol values. Should be used together
