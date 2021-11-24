@@ -11,6 +11,7 @@ MEMORY
   APP_FLASH (rx) : ORIGIN = 0x08004000, LENGTH = 1M - 16K
   RAM (rwx) : ORIGIN = 0x20000000, LENGTH = 128K - 0x100
   NOINIT (rwx) : ORIGIN = 0x20000000 + 128K - 0x100, LENGTH = 0x100
+  BACKUP_SRAM (rwx) : ORIGIN = 0x40024000, LENGTH = 4k
 }
 
 /* Linker script to place sections and symbol values. Should be used together
@@ -187,7 +188,7 @@ SECTIONS
 	 /* Global data not cleared after reset.  */
 	.noinit (NOLOAD): {
 		KEEP(*(*.noinit*))
-	} > NOINIT
+	} > BACKUP_SRAM
 
 	.heap (COPY):
 	{

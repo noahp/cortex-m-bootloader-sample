@@ -27,6 +27,8 @@ CFLAGS += \
   -Os -ggdb3 -std=c11 \
   -fdebug-prefix-map=$(abspath .)=. \
   -I. \
+  -Isrc/common/ \
+  -Isrc/common/cmsis \
   -ffunction-sections -fdata-sections \
   -Werror \
   -Wall \

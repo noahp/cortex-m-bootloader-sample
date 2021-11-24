@@ -1,7 +1,10 @@
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+
+#include "stm32f407xx.h"
 
 extern void initialise_monitor_handles(void);
 
@@ -61,6 +64,29 @@ __attribute__((section(".isr_vector"))) void (*const g_pfnVectors[])(void) = {
     HardFault_Handler,
 };
 
+// specific to the stm32f4xx
+static uint32_t get_random_number(void) {
+  RCC->AHB2ENR |= RCC_AHB2ENR_RNGEN;
+  RNG->CR |= RNG_CR_RNGEN;
+
+  while (!(RNG->SR & RNG_SR_DRDY)) {
+    // wait for the data to be ready
+  }
+
+  return RNG->DR;
+}
+
+static void enable_backup_sram(void) {
+  // enable power interface clock
+  RCC->APB1ENR |= RCC_APB1ENR_PWREN;
+
+  // enable backup SRAM clock
+  RCC->AHB1ENR |= RCC_AHB1ENR_BKPSRAMEN;
+
+  // enable backup SRAM
+  PWR->CR |= PWR_CR_DBP;
+}
+
 int main(void) {
   initialise_monitor_handles();
 
@@ -69,8 +95,12 @@ int main(void) {
 
   printf("Hello from Bootloader!\n");
 
+  // enable backup SRAM before accessing any noinit data
+  enable_backup_sram();
+
   extern uint32_t mailbox[4];
-  mailbox[0] = 0x12345678;
+  mailbox[0] = get_random_number();
+  printf("Set random value to mailbox: 0x%08" PRIx32 "\n", mailbox[0]);
 
   extern uint32_t __application_start[2];
 
