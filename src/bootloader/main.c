@@ -2,11 +2,13 @@
 #include <stdio.h>
 #include <unistd.h>
 
-int main(void) {
-  // line buffering on stdout
-  setvbuf(stdout, NULL, _IOLBF, 0);
+#include "src/common/semihosting.h"
 
-  printf("Hello from Bootloader!\n");
+int main(void) {
+// line buffering on stdout
+// setvbuf(stdout, NULL, _IOLBF, 0);
+#define HELLO_STRING "Hello from Bootloader!\n"
+  semihosting_write(1, HELLO_STRING, sizeof(HELLO_STRING));
 
   extern uint32_t mailbox[4];
   mailbox[0] = 0x12345678;
