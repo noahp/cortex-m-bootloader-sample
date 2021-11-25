@@ -7,12 +7,13 @@
 #include "stm32f407xx.h"
 
 // Two non-initialized variables, used to demonstrate keeping information
-// through chip reset.
+// through chip reset. Marked 'volatile' to ensure the compiler doesn't optimize
+// away the STR's to these addresses
 #define RESET_MAGIC 0xDEADBEEF
 // magic value used to check if the variables are initialized
-__attribute__((section(".noinit"), used)) uint32_t reset_count_magic;
+__attribute__((section(".noinit"))) volatile uint32_t reset_count_magic;
 // reset counter, incremented on every warm reset
-__attribute__((section(".noinit"), used)) uint32_t reset_count;
+__attribute__((section(".noinit"))) volatile uint32_t reset_count;
 
 extern void initialise_monitor_handles(void);
 
