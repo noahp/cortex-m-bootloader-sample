@@ -84,7 +84,7 @@ int main(void) {
 
   printf("Hello from Bootloader!\n");
 
-  extern uint32_t mailbox[4];
+  extern volatile uint32_t mailbox[4];
   mailbox[0] = get_random_number();
   printf("Set random value to mailbox: 0x%08" PRIx32 "\n", mailbox[0]);
 

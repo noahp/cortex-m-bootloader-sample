@@ -70,7 +70,7 @@ int main(void) {
 
   printf("Hello from Application!\n");
 
-  extern uint32_t mailbox[4];
+  extern volatile uint32_t mailbox[4];
   printf("mailbox was: 0x%08" PRIx32 "\n", mailbox[0]);
 
   while (1) {
