@@ -42,15 +42,8 @@ LDFLAGS += \
 
 APP_SRCS += \
   src/app/main.c \
-  src/common/noinit.c \
 
 APP_OBJS = $(APP_SRCS:%.c=$(BUILDDIR)/%.o)
-
-BOOTLOADER_SRCS += \
-  src/bootloader/main.c \
-  src/common/noinit.c \
-
-BOOTLOADER_OBJS = $(BOOTLOADER_SRCS:%.c=$(BUILDDIR)/%.o)
 
 all: $(BUILDDIR)/app.elf
 
@@ -87,4 +80,4 @@ gdb-app: $(BUILDDIR)/app.elf
 		-ex "load $(BUILDDIR)/app.elf" \
 		-ex "monitor reset init" $(BUILDDIR)/app.elf
 
-.PHONY: all clean debug gdb gdb-bootloader
+.PHONY: all clean debug gdb
