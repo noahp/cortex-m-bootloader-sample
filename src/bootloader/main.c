@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -69,8 +70,9 @@ int main(void) {
 
   printf("Hello from Bootloader!\n");
 
-  extern uint32_t mailbox[4];
+  extern volatile uint32_t mailbox[4];
   mailbox[0] = 0x12345678;
+  printf("Set mailbox[0] = %08" PRIx32 "\n", mailbox[0]);
 
   extern uint32_t __application_start[2];
 
